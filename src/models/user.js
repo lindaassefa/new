@@ -30,11 +30,24 @@ const User = sequelize.define('User', {
     type: DataTypes.INTEGER,
     allowNull: true,
   },
-  chronicConditions: {
+  name: {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  location: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  chronicConditions: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    allowNull: true,
+    defaultValue: [],
+  },
   medications: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  profilePicture: {
     type: DataTypes.STRING,
     allowNull: true,
   }
@@ -43,13 +56,13 @@ const User = sequelize.define('User', {
     beforeCreate: async (user) => {
       if (user.password) {
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, 10);
+        user.password = await bcrypt.hash(user.password, salt);
       }
     },
     beforeUpdate: async (user) => {
       if (user.changed('password')) {
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, 10);
+        user.password = await bcrypt.hash(user.password, salt);
       }
     }
   }

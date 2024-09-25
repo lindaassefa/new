@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Container, TextField, Button, Typography, Alert } from '@mui/material';
-import axios from 'axios';
+import { registerUser } from './apiService'; 
 
 function Register() {
   const [username, setUsername] = useState('');
@@ -16,10 +16,13 @@ function Register() {
 
     try {
       console.log('Attempting registration with:', { username, email, password });
-      const response = await axios.post('http://localhost:5003/api/auth/register', { username, email, password });
-      console.log('Registration response:', response.data);
+
+      // Use the registerUser function from apiService.js
+      const response = await registerUser({ username, email, password });
+      
+      console.log('Registration response:', response);
       setSuccess('Registration successful! You can now log in.');
-      // Here you would typically redirect the user to login or automatically log them in
+      
     } catch (error) {
       console.error('Registration error:', error);
       if (error.response) {

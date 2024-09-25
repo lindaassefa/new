@@ -1,45 +1,70 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Typography, TextField, Button, Box } from '@mui/material';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { Container, Typography, TextField, Button, Box, Checkbox, FormGroup, FormControlLabel } from '@mui/material';
+import { fetchProfile, updateProfile } from './apiService'; // Adjust the path as necessary
 
-function Profile() {
+const conditions = ['Asthma', 'Digestive Issues', 'Mild Anxiety'];
+
+const Profile = () => {
   const [profile, setProfile] = useState({
     username: '',
     email: '',
     age: '',
-    chronicConditions: '',
-    medications: ''
+    name: '',
+    location: '',
+    chronicConditions: [],
+    medications: '',
+    profilePicture: null
   });
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    const loadProfile = async () => {
+      try {
+        const profileData = await fetchProfile();
+        setProfile(profileData.data);
+      } catch (error) {
+        setError('Failed to fetch profile');
+        console.error('Profile fetch error:', error);
+      }
+    };
 
-  const fetchProfile = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/profile', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setProfile(response.data);
-    } catch (error) {
-      setError('Error fetching profile');
-      console.error('Profile fetch error', error);
-    }
-  };
+    loadProfile();
+  }, []);
 
   const handleChange = (e) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
   };
 
+  const handleConditionChange = (condition) => {
+    setProfile(prevProfile => ({
+      ...prevProfile,
+      chronicConditions: prevProfile.chronicConditions.includes(condition)
+        ? prevProfile.chronicConditions.filter(c => c !== condition)
+        : [...prevProfile.chronicConditions, condition]
+    }));
+  };
+
+  const handleFileChange = (event) => {
+    setProfile(prevProfile => ({
+      ...prevProfile,
+      profilePicture: event.target.files[0]
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      await axios.put('/api/profile', profile, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const formData = new FormData();
+      for (const key in profile) {
+        if (key === 'chronicConditions') {
+          formData.append(key, JSON.stringify(profile[key]));
+        } else if (key === 'profilePicture' && profile[key]) {
+          formData.append(key, profile[key]);
+        } else {
+          formData.append(key, profile[key]);
+        }
+      }
+      await updateProfile(formData);
       alert('Profile updated successfully');
     } catch (error) {
       setError('Error updating profile');
@@ -85,12 +110,39 @@ function Profile() {
         <TextField
           margin="normal"
           fullWidth
-          id="chronicConditions"
-          label="Chronic Conditions"
-          name="chronicConditions"
-          value={profile.chronicConditions}
+          id="name"
+          label="Full Name"
+          name="name"
+          value={profile.name}
           onChange={handleChange}
         />
+        <TextField
+          margin="normal"
+          fullWidth
+          id="location"
+          label="Location"
+          name="location"
+          value={profile.location}
+          onChange={handleChange}
+        />
+        <Typography variant="h6" component="h2" gutterBottom>
+          Chronic Conditions
+        </Typography>
+        <FormGroup>
+          {conditions.map((condition) => (
+            <FormControlLabel
+              key={condition}
+              control={
+                <Checkbox
+                  checked={profile.chronicConditions.includes(condition)}
+                  onChange={() => handleConditionChange(condition)}
+                  name={condition}
+                />
+              }
+              label={condition}
+            />
+          ))}
+        </FormGroup>
         <TextField
           margin="normal"
           fullWidth
@@ -99,7 +151,22 @@ function Profile() {
           name="medications"
           value={profile.medications}
           onChange={handleChange}
+          multiline
+          rows={4}
         />
+        <input
+          accept="image/*"
+          style={{ display: 'none' }}
+          id="raised-button-file"
+          type="file"
+          onChange={handleFileChange}
+        />
+        <label htmlFor="raised-button-file">
+          <Button variant="contained" component="span">
+            Upload Profile Picture
+          </Button>
+        </label>
+        {profile.profilePicture && <Typography>{profile.profilePicture.name}</Typography>}
         <Button
           type="submit"
           fullWidth
@@ -111,6 +178,6 @@ function Profile() {
       </Box>
     </Container>
   );
-}
+};
 
 export default Profile;
